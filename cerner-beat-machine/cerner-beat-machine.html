@@ -1,0 +1,49 @@
+<!-- cerner_2^5_2019 -->
+<html lang="en">
+  <!-- import the ToneJS library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/13.4.9/Tone.min.js"></script>
+  <body>
+    <!-- add the buttons which will control different synthesizers -->
+    <button style="background-color: #26A2E5" onclick="toggleInstrument(0)">C</button>
+    <button style="background-color: #4CB2E9" onclick="toggleInstrument(1)">E</button>
+    <button style="background-color: #7FC8EF" onclick="toggleInstrument(2)">R</button>
+    <button style="background-color: #A6D9F4" onclick="toggleInstrument(3)">N</button>
+    <button style="background-color: #CCE9F9" onclick="toggleInstrument(4)">E</button>
+    <button style="background-color: #EBF6FD" onclick="toggleInstrument(5)">R</button>
+    <button style="background-color: #333333" onclick="start()">PLAY/MUTE</button>
+  </body>
+  <script>
+    // Initialize our variables
+    let loop, hasStarted = false, isMuted = false, counter = 0, instrumentTriggers = [false, false, false, false, false, false], toggleInstrument = index => instrumentTriggers[index] = !instrumentTriggers[index];
+    // create our synths
+    let synths = [new Tone.MembraneSynth().toMaster(), new Tone.MetalSynth().toMaster(), new Tone.PolySynth(6, Tone.Synth).toMaster(), new Tone.NoiseSynth().set("noise.type", "brown").toMaster(), new Tone.MonoSynth().toMaster(), new Tone.PolySynth(6, Tone.Synth).toMaster(), new Tone.MonoSynth().connect(new Tone.PingPongDelay().toMaster())];
+    const start = () => {
+      // start up the ToneJS time tracker
+      if (!hasStarted) Tone.Transport.start();
+      // apply mute
+      Tone.Master.mute = isMuted;
+      // toggle mute
+      isMuted = !isMuted;
+    }
+    const patternGenerator = time => {
+      // kick drum will play no matter what
+      if (counter % 4 === 0) synths[0].triggerAttackRelease('F#1', '8n', time, 0.2);
+      // C = hi-hat
+      if (instrumentTriggers[0] && counter % 2 === 0) synths[1].triggerAttackRelease('32n', time, 0.001);
+      // E = offbeat static harmony
+      if (instrumentTriggers[1] && (counter - 2) % 4 === 0) synths[2].triggerAttackRelease('C#4', '16n', time, 0.05).triggerAttackRelease('E4', '16n', Tone.Time(time).toSeconds() + Tone.Time("16n").toSeconds(), 0.06);
+      // R = clap
+      if (instrumentTriggers[2] && (counter - 4) % 8 === 0) synths[3].triggerAttackRelease('4n', time, 0.4);
+      // N = bass
+      if (instrumentTriggers[3] && counter === 0) synths[4].triggerAttackRelease('C#3', '32n', time, 0.03).triggerAttackRelease('C#2', '32n', Tone.Time(time).toSeconds() + Tone.Time(Tone.Time("0:1:0").toSeconds()).toSeconds(), 0.05).triggerAttackRelease('C#3', '32n', Tone.Time(time).toSeconds() + Tone.Time("0:2:2").toSeconds(), 0.03).triggerAttackRelease('F#2', '32n', Tone.Time(time).toSeconds() + Tone.Time("0:3:2").toSeconds(), 0.03);
+      // E = chords
+      if (instrumentTriggers[4] && counter === 4) synths[5].triggerAttackRelease(['E4', 'G#4'], '32n', time, 0.2).triggerAttackRelease('C#3', '32n', Tone.Time(time).toSeconds() + Tone.Time("0:0:2").toSeconds(), 0.2).triggerAttackRelease(['E4', 'G#4', 'B5'], '32n', Tone.Time(time).toSeconds() + Tone.Time("0:1:2").toSeconds(), 0.2).triggerAttackRelease(['E4', 'A#4', 'A#5'], '32n', Tone.Time(time).toSeconds() + Tone.Time("0:2:2").toSeconds(), 0.2);
+      // R = arppegio with ping pong delay
+      if (instrumentTriggers[5] && counter === 26) synths[6].triggerAttackRelease('E4', '32n', time, 0.02).triggerAttackRelease('G#4', '32n', Tone.Time(time).toSeconds() + Tone.Time(Tone.Time("0:0:1").toSeconds()).toSeconds(), 0.018).triggerAttackRelease('A#4', '32n', Tone.Time(time).toSeconds() + Tone.Time("0:0:2").toSeconds(), 0.016).triggerAttackRelease('C#5', '32n', Tone.Time(time).toSeconds() + Tone.Time("0:0:3").toSeconds(), 0.014).triggerAttackRelease('E5', '32n', Tone.Time(time).toSeconds() + Tone.Time("0:1:0").toSeconds(), 0.012);
+      // increment the counter to keep track of what "step" of the loop we're in
+      counter = (counter+1) % 32;
+    }
+    // start up our loop
+    loop = new Tone.Loop(patternGenerator, '16n').start(0);
+  </script>
+</html>
